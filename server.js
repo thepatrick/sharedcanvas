@@ -32,7 +32,7 @@ server = http.createServer(function (request, response) {
         fileServer.serve(request, response);
     });
 });
-server.listen(8080);
+server.listen(process.env.PORT || 8080);
 socket = io.listen(server);
 socket.on('connection', function(client){
 	util.log("Connected! :)");
