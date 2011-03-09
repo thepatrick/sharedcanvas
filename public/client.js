@@ -21,17 +21,17 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-var socket = new io.Socket(""), touchCache = {}; 
+var socket = new io.Socket(""); 
 $(document).observe("dom:loaded", function(){
-  
-  socket.connect();
   
   var doc = $(document);
 
-	var drawingCanvas = new Element('canvas', { width: document.width, height: document.height }); 
+	var drawingCanvas = new Element('canvas', { width: document.width, height: document.height - 40 }); 
 	$$('body')[0].appendChild(drawingCanvas);
-  
-  var dims = document.viewport.getDimensions();
+	
+	// Event.observe(window, 'resize', function(){
+	// 	document.location.reload();
+	// });
   
   // Check the element is in the DOM and the browser supports canvas
   if(!drawingCanvas.getContext) {
@@ -42,114 +42,100 @@ $(document).observe("dom:loaded", function(){
   
   context.lineCap = 'round';
   context.lineWidth = 2.5;
+	
+	var magic = {
+		context: drawingCanvas.getContext('2d'),
+		touchCache: {},
+		setup: function() {
+			this.context.lineCap = 'round';
+		  this.context.lineWidth = 2.5;
+		  socket.connect();
+		},
+		drawLine: function(moveX, moveY, lineX, lineY) {
+			this.context.strokeStyle = "#000000";
+	    this.context.fillStyle = "#000000";
+	    this.context.beginPath();
+	    this.context.moveTo(moveX, moveY);
+	    this.context.lineTo(lineX, lineY);
+	    this.context.closePath();
+	    this.context.stroke();
+	    this.context.fill();
+		},
+		clear: function() {
+			this.context.clearRect(0,0, document.width, document.height - 40);
+		},
+		eventToProtocol: function(touch) {
+			return { x: touch.pageX, y: touch.pageY, id: touch.identifier };
+		}
+	}
+	
+	magic.setup();
 
-  doc.observe('touchstart', function(e){
+  drawingCanvas.observe('touchstart', function(e){
     var t = $A(e.touches).map(function(touch) {          
-      touchCache[touch.identifier] = { x: touch.pageX, y: touch.pageY };
-      context.strokeStyle = "#000000";
-      context.fillStyle = "#000000";
-      context.beginPath();
-      context.moveTo(touch.pageX - 1, touch.pageY -1);
-      context.lineTo(touch.pageX, touch.pageY);
-      context.closePath();
-      context.stroke();
-      context.fill();
-      return { x: touch.pageX, y: touch.pageY, id: touch.identifier };
+      magic.touchCache[touch.identifier] = { x: touch.pageX, y: touch.pageY };
+			magic.drawLine(touch.pageX - 1, touch.pageY -1, touch.pageX, touch.pageY);
+      return magic.eventToProtocol(touch);
     });
-    socket.send({ event: "start", touches: t });
+    socket.send({ e: "start", touches: t });
     e.preventDefault();
   });
-  doc.observe('touchmove', function(e){
+  drawingCanvas.observe('touchmove', function(e){
     var t = $A(e.touches).map(function(touch) {
-     var lastEvent = touchCache[touch.identifier];
-     
-     context.strokeStyle = "#000000";
-     context.fillStyle = "#000000";
-     context.beginPath();
-     context.moveTo(lastEvent.x, lastEvent.y);
-     context.lineTo(touch.pageX, touch.pageY);
-     context.closePath();
-     context.stroke();
-     context.fill();
-     
-     lastEvent.x = touch.pageX;
-     lastEvent.y = touch.pageY;
-     
-     
-     return { x: touch.pageX, y: touch.pageY, id: touch.identifier };
+			var lastEvent = magic.touchCache[touch.identifier];	
+			magic.drawLine(lastEvent.x, lastEvent.y, touch.pageX, touch.pageY);
+			lastEvent.x = touch.pageX;
+			lastEvent.y = touch.pageY;
+      return magic.eventToProtocol(touch);
     });
-    socket.send({ event: "move", touches: t });
+    socket.send({ e: "move", touches: t });
     e.preventDefault();
   });
-  doc.observe('touchend', function(e){
+  drawingCanvas.observe('touchend', function(e){
     var t = $A(e.touches).map(function(touch) {
-      
-       var lastEvent = touchCache[touch.identifier];
+      var lastEvent = magic.touchCache[touch.identifier];
+			magic.drawLine(lastEvent.x, lastEvent.y, touch.pageX, touch.pageY);
+      delete magic.touchCache[touch.identifier];
+      return magic.eventToProtocol(touch);
+    });
+    socket.send({ e: "end", touches: t });
+    e.preventDefault();
+  });
 
-       context.strokeStyle = "#000000";
-       context.fillStyle = "#000000";
-       context.beginPath();
-       context.moveTo(lastEvent.x, lastEvent.y);
-       context.lineTo(touch.pageX, touch.pageY);
-       context.closePath();
-       context.stroke();
-       context.fill();
-      
-      delete touchCache[touch.identifier];
-    
-      return { x: touch.pageX, y: touch.pageY, id: touch.identifier };
-    });
-    socket.send({ event: "end", touches: t });
-    e.preventDefault();
-  });
+	$$('.clear')[0].observe('click', function(e){
+		e.preventDefault();
+    socket.send({ e: "clear" });
+		magic.clear();
+	});
 
   socket.on('message', function(m){  
-    if(m.event == 'start') {
-      
+    if(m.e == 'start') {
       m.touches.each(function(m){
-        touchCache[m.id] = { x: m.x, y: m.y };
-        context.strokeStyle = "#000000";
-        context.fillStyle = "#000000";
-        context.beginPath();
-        context.moveTo(m.x - 1, m.y -1);
-        context.lineTo(m.x, m.y);
-        context.closePath();
-        context.stroke();
-        context.fill();            
+        magic.touchCache[m.id] = { x: m.x, y: m.y };
+				magic.drawLine(m.x - 1, m.y -1, m.x, m.y);
       });
 
-    } else if(m.event == 'move') {
-
+    } else if(m.e == 'move') {
       m.touches.each(function(m){
-        var lastEvent = touchCache[m.id];
-        context.strokeStyle = "#000000";
-        context.fillStyle = "#000000";
-        context.beginPath();
-        context.moveTo(lastEvent.x, lastEvent.y);
-        context.lineTo(m.x, m.y);
-        context.closePath();
-        context.stroke();
-        context.fill();
+        var lastEvent = magic.touchCache[m.id];
+				magic.drawLine(lastEvent.x, lastEvent.y, m.x, m.y);
         lastEvent.x = m.x;
         lastEvent.y = m.y;
       });
 
-    } else if(m.event == 'end') {
-
+    } else if(m.e == 'end') {
       m.touches.each(function(m){
-        var lastEvent = touchCache[m.id];
-        context.strokeStyle = "#000000";
-        context.fillStyle = "#000000";
-        context.beginPath();
-        context.moveTo(lastEvent.x, lastEvent.y);
-        context.lineTo(m.x, m.y);
-        context.closePath();
-        context.stroke();
-        context.fill();
-        delete touchCache[m.id];
+        var lastEvent = magic.touchCache[m.id];
+				magic.drawLine(lastEvent.x, lastEvent.y, m.x, m.y);
+        delete magic.touchCache[m.id];
       });
 
-    }
+    } else if(m.e == 'clear') {
+			magic.clear();
+		} else if(m.e == 'welcome') {
+			var channel = document.location.search.match(/canvas=([^&]+)/);
+			socket.send({ e: 'canvas', c: channel && channel[1] || 'default' });
+		}
 
   });
 

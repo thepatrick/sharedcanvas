@@ -25,27 +25,42 @@
 -->
 <html lang="en">
   <head>
-    <title>SharedCanvas</title>
+    <title>Shared Canvas</title>
 		<meta name="viewport" content="initial-scale=1.0, width=device-width, maximum-scale=1.0"/>
 		<link rel="stylesheet" href="test.css" type="text/css;charset=utf-8">
-		<meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="apple-touch-startup-image" href="/Default@2x.png">
   </head>
-  <body>  
+  <body class="newherebody">  
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/prototype/1.7.0.0/prototype.js"></script>
     
-    <div class="welcome">
+    <div class="newhere">
       <div class="existing">
         <h1>SharedCanvas</h1>
-      
-        <form action="/client.html" method="get">
-          <div>
-            <input type="text" name="canvas" placeholder="type a name">
-          </div>
-        </form>
+        
+        <div>
+          <p>
+            SharedCanvas is simple, just type (or tap in!) the name of a canvas
+            and go - you don't need to create it first. Tell someone else the
+            name and they enter it and everything shows up (in real time!) 
+            for them too.
+          </p>
+          <p>
+            To draw you need a touch device (e.g. and iOS or Android device),
+            but your drawings can be viewed in many modern browsers (Safari,
+            and Chrome definitely work, Firefox should, IE9 ought to as well).
+          </p>
+          <p>
+            Drawings will only persist as long as the server isn't rebooted:
+            this is still an experimental service!
+          </p>
+          <p>
+            SharedCanvas was created by <a href="http://thepatrick.com.au/">Patrick</a>,
+            and the source is on <a href="https://github.com/thepatrick/sharedcanvas">GitHub</a>. It is hosted on
+            <a href="http://no.de/">Joyent Node</a>.
+          </p>
+        </div>
       </div>
       <div class="new">
-        <a href="/newhere.html">I'm new here</a>
+        <a href="/">Get started</a>
       </div>
     </div>    
   </body>

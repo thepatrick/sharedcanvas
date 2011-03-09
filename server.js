@@ -25,7 +25,7 @@ var nodeStatic = require('./node-static'),
     util = require('util'),
     http = require('http'),
 		io = require('./socket.io'),
-		file, server, socket, touches = [];
+		file, server, socket, touches = {}, channelListeners = {};
 fileServer = new(nodeStatic.Server)('./public');
 server = http.createServer(function (request, response) {
     request.addListener('end', function () {
@@ -35,13 +35,37 @@ server = http.createServer(function (request, response) {
 server.listen(process.env.PORT || 8080);
 socket = io.listen(server);
 socket.on('connection', function(client){
+	var myChosenChannel = null;
 	util.log("Connected! :)");
-	touches.forEach(function(t){
-		client.send(t);
-	});
+	client.send({ e: 'welcome' });
   client.on('message', function(m){
-		client.broadcast(m);
-		touches.push(m);
+		if(m.e == "canvas") {
+			myChosenChannel = m.c;
+			if(touches[myChosenChannel]) {
+				touches[myChosenChannel].forEach(function(t){
+					client.send(t);
+				});				
+			} else {
+				touches[myChosenChannel] = [];
+			}
+			if(!channelListeners[myChosenChannel]) {
+				channelListeners[myChosenChannel] = [];
+			}
+			channelListeners[myChosenChannel].push(client);
+			return;
+		}
+		channelListeners[myChosenChannel].forEach(function(c){
+			if(c != client) {
+				c.send(m);				
+			}
+		});
+		if(m.e == "clear") {
+			util.log("Clearing all touches on channel " + myChosenChannel);
+			touches[myChosenChannel] = [];
+		} else {
+			util.log("Touch " + m.e + ' on channel ' + myChosenChannel);
+			touches[myChosenChannel].push(m);			
+		}
 	}) 
   client.on('disconnect', function(){
 		util.log("Disconnect :(")

@@ -29,24 +29,17 @@
 		<meta name="viewport" content="initial-scale=1.0, width=device-width, maximum-scale=1.0"/>
 		<link rel="stylesheet" href="test.css" type="text/css;charset=utf-8">
 		<meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="apple-touch-startup-image" href="/Default@2x.png">
   </head>
   <body>  
-    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/prototype/1.7.0.0/prototype.js"></script>
     
-    <div class="welcome">
-      <div class="existing">
-        <h1>SharedCanvas</h1>
-      
-        <form action="/client.html" method="get">
-          <div>
-            <input type="text" name="canvas" placeholder="type a name">
-          </div>
-        </form>
-      </div>
-      <div class="new">
-        <a href="/newhere.html">I'm new here</a>
-      </div>
-    </div>    
+    <div class="toolbar">
+      <a href="/" class="back">Back</a>
+      <a href="#" class="clear">Clear</a>
+    </div>
+    
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/prototype/1.7.0.0/prototype.js"></script>
+    <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+    <script src="client.js" type="text/javascript" charset="utf-8"></script>
+    
   </body>
 </html>
